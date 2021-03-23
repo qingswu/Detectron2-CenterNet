@@ -10,7 +10,7 @@ import torch
 from detectron2.checkpoint import DetectionCheckpointer
 from detectron2.config import get_cfg
 from detectron2.data import build_detection_test_loader
-from detectron2.evaluation import COCOEvaluator, inference_on_dataset, print_csv_format
+# from detectron2.evaluation import COCOEvaluator, inference_on_dataset, print_csv_format
 from detectron2.export import Caffe2Tracer, add_export_config
 from detectron2.export.tensorrt import META_ARCH_TENSORRT_EXPORT_TYPE_MAP, TensorRTModel
 from detectron2.modeling import build_model
@@ -169,37 +169,37 @@ if __name__ == "__main__":
     del torch_model
     torch.cuda.empty_cache()
 
-    # run evaluation with the converted model
-    if args.run_eval:
-        if args.format == "onnx":
-            model = traceable_model
-        elif args.format == "tensorrt":
-            MetaArch = META_ARCH_TENSORRT_EXPORT_TYPE_MAP[cfg.MODEL.META_ARCHITECTURE]
-            model = MetaArch(cfg, engine_f)
-            model.to(torch.device(cfg.MODEL.DEVICE))
-        else:
-            model = caffe2_model
-            assert args.format == "caffe2", "Python inference in other format is not yet supported."
-        logger.info("Inference traceable model\n{}".format(str(model)))
-        dataset = cfg.DATASETS.TEST[0]
-        data_loader = build_detection_test_loader(cfg, dataset)
-        # NOTE: hard-coded evaluator. change to the evaluator for your dataset
-        evaluator = COCOEvaluator(dataset, cfg, True, args.output)
-        metrics = inference_on_dataset(model, data_loader, evaluator)
-        print_csv_format(metrics)
-        if args.format == "tensorrt":
-            if args.fp16 or args.int8:
-                threshold = 0.1
-            else:
-                threshold = 0.5
-            engine_time = model.report_engine_time("engine_time.txt", threshold)
-            # write performance to file
-            perf_f = os.path.join(args.output, "perf.txt")
-            with open(perf_f, "w") as f:
-                f.write("engine {}\n".format(os.path.abspath(engine_f)))
-                f.write("time {}\n".format(engine_time))
-                for k, v in metrics.items():
-                    if k == "box_proposals":
-                        f.write("{} {}\n".format(k, v["AR@100"]))
-                    elif k == "bbox":
-                        f.write("{} {}\n".format(k, v["AP"]))
+    # # run evaluation with the converted model
+    # if args.run_eval:
+    #     if args.format == "onnx":
+    #         model = traceable_model
+    #     elif args.format == "tensorrt":
+    #         MetaArch = META_ARCH_TENSORRT_EXPORT_TYPE_MAP[cfg.MODEL.META_ARCHITECTURE]
+    #         model = MetaArch(cfg, engine_f)
+    #         model.to(torch.device(cfg.MODEL.DEVICE))
+    #     else:
+    #         model = caffe2_model
+    #         assert args.format == "caffe2", "Python inference in other format is not yet supported."
+    #     logger.info("Inference traceable model\n{}".format(str(model)))
+    #     dataset = cfg.DATASETS.TEST[0]
+    #     data_loader = build_detection_test_loader(cfg, dataset)
+    #     # NOTE: hard-coded evaluator. change to the evaluator for your dataset
+    #     evaluator = COCOEvaluator(dataset, cfg, True, args.output)
+    #     metrics = inference_on_dataset(model, data_loader, evaluator)
+    #     print_csv_format(metrics)
+    #     if args.format == "tensorrt":
+    #         if args.fp16 or args.int8:
+    #             threshold = 0.1
+    #         else:
+    #             threshold = 0.5
+    #         engine_time = model.report_engine_time("engine_time.txt", threshold)
+    #         # write performance to file
+    #         perf_f = os.path.join(args.output, "perf.txt")
+    #         with open(perf_f, "w") as f:
+    #             f.write("engine {}\n".format(os.path.abspath(engine_f)))
+    #             f.write("time {}\n".format(engine_time))
+    #             for k, v in metrics.items():
+    #                 if k == "box_proposals":
+    #                     f.write("{} {}\n".format(k, v["AR@100"]))
+    #                 elif k == "bbox":
+    #                     f.write("{} {}\n".format(k, v["AP"]))
